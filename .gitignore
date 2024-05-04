@@ -1,0 +1,34 @@
+# Ignore build and devel directories
+/build/
+/devel/
+
+# Ignore logs and other runtime data
+/log/
+/session_logs/
+
+# Ignore core dumps
+*.core
+
+# Ignore ROS workspace setup files
+*.setup
+
+# Ignore dynamically generated files
+*.db
+
+# Ignore compiled Python files
+*.pyc
+
+# Ignore temporary files
+*~
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore ROS package-specific files
+*.rosinstall
+/rosinstall
+/.catkin_workspace
+
+# Ignore the robot_setting folder inside the scripts directory
+scripts/robot_setting/
