@@ -8,6 +8,7 @@ filepath    = os.path.join(script_dir,'robot_setting')
 
 if os.path.exists(filepath):
     from robot_setting import LEFT_TURN_L,LEFT_TURN_R,RIGHT_TURN_L,RIGHT_TURN_R,THUR_L,THUR_R
+    print('Loading customize robot settings')
 else:
     # default values
     LEFT_TURN_R     = 240 
