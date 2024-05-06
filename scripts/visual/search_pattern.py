@@ -14,9 +14,9 @@ else:
     LEFT_TURN_R     = 240 
     LEFT_TURN_L     = 100
     RIGHT_TURN_R    = 420
-    RIGHT_TURN_L    = 200
+    RIGHT_TURN_L    = 170
     THUR_L          = 100
-    THUR_R          = 380
+    THUR_R          = 320
 
 def search_buffer_line(mask) -> list:
     low_bound   = 15
