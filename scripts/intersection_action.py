@@ -169,7 +169,7 @@ class VehicleMovement:
         self.inter_guide_line = [self._thur_guide_hsv,self._left_guide_hsv,self._right_guide_hsv]
 
         self._buffer_line_hsv = HSVSpace(160,125,140,10,240,200)
-        self._exit_line_hsv   = HSVSpace(50,20,240,170,220,130)
+        self._exit_line_hsv   = HSVSpace(50,20,240,140,220,130)
 
     def _request_task_init(self):
         rospy.loginfo("%s: Waiting for task server",self._robot_name)
@@ -414,7 +414,7 @@ class VehicleMovement:
                     rospy.logwarn('Invaild return of line_x')
                 # also search for intersection exit line
                 dis2exit = search_line(hsv_image,self._exit_line_hsv)
-                if dis2exit > 25:
+                if dis2exit > 23:
                     # the robot is sufficently close to exit the intersection
                     if rospy.get_time() - self.enter_inter_time > 0.2:
                         # leave intersections
