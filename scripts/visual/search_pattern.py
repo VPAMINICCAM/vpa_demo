@@ -134,7 +134,84 @@ def search_inter_guide_line(hsv_space:HSVSpace,hsv_image,action:int):
                 if len(seg) == 1:
                     return max(min(int(np.mean(seg[0])),THUR_R),THUR_L)
         return None
-        
+
+def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
+    mask = hsv_space.apply_mask(hsv_image)
+    
+    # handle the crossing (X) patterns on the guide lines
+    height = int(hsv_image.shape[0])
+    x_list = []
+    if action == 1:
+        # left turn
+        for i in range(30,170,20):
+            y = height - i
+            line1 = np.nonzero(mask[y,:])[0]
+            line2 = np.nonzero(mask[y-20,:])[0]
+            # print(y,line)
+            seg1 = _break_segs(line1)
+            seg2 = _break_segs(line2)
+
+            if len(seg2) == 0:
+                # the further line missing
+                if len(seg1) == 0:
+                    res =  None
+                res = int(np.mean(seg1[0]))
+            
+            if len(seg2) == 1:
+                # one line in fornt
+                if len(seg1) == 1:
+                    res = int(np.mean(seg1[0]))
+                if len(seg1) > 1:
+                    res = int(np.mean(seg2[0]))
+                
+            if len(seg2) > 1:
+                if len(seg1) == 1:
+                    res = int(np.mean(seg2[1]))
+                if len(seg1) == 2:
+                    n1 = abs(np.mean(seg1[0]) - np.mean(seg1[1]))
+                    n2 = abs(np.mean(seg2[0]) - np.mean(seg2[1]))
+                    if n1 > n2:
+                        # closer gap is bigger
+                        res = int(np.mean(seg1[1])) # follow lines on the right
+                    else:
+                        res = int(np.mean(seg1[0]))
+                
+                res = int(np.mean(seg2[0]))
+            
+            return res
+
+    elif action == 2:
+        # right turn
+        for i in range(70,130,15):
+            y = i
+            line = np.nonzero(mask[y,:])[0]
+            seg = _break_segs(line)
+            if len(seg) == 1:
+                return min(max(RIGHT_TURN_L,int(np.mean(seg[0]))),RIGHT_TURN_R)
+        return None
+    else: # thur
+        width = hsv_image.shape[1]
+        y_hl = []
+        for x in range(5,width,50):
+            y_keep_out_high = height
+            y_keep_out_low = 0
+            vline = np.nonzero(mask[:,x])[0]
+            if len(vline) > 5 and len(vline) < 80:
+                y_hl.append(np.mean(vline))
+            elif len(vline) >= 80:
+                return x
+        if len(y_hl) >=5 :
+            # there is a front line here
+            y_keep_out_high = min(y_hl)
+            y_keep_out_low = max(y_hl)
+        for i in range(30,120,15):
+            y = height - i
+            if y < y_keep_out_high or y > y_keep_out_low:
+                line = np.nonzero(mask[y,:])[0]
+                seg = _break_segs(line)
+                if len(seg) == 1:
+                    return max(min(int(np.mean(seg[0])),THUR_R),THUR_L)
+        return None      
 
 def _break_segs(numbers:list,max_gap=5):
     
