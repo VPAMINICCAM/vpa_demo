@@ -3,7 +3,6 @@
 import rospy
 from enum import Enum
 
-import numpy as np
 # Sensor Message
 from sensor_msgs.msg import Image, Range
 # Geometry Message
@@ -165,7 +164,7 @@ class VehicleMovement:
         # guiding lines inside intersections - no dynamic reconfigure
         self._right_guide_hsv = HSVSpace(140,100,120,80,250,200)
         self._left_guide_hsv  = HSVSpace(160,140,180,80,230,160)
-        self._thur_guide_hsv  = HSVSpace(30,0,250,170,220,170)   
+        self._thur_guide_hsv  = HSVSpace(30,0,250,170,230,130)  
     
         self.inter_guide_line = [self._thur_guide_hsv,self._left_guide_hsv,self._right_guide_hsv]
 
