@@ -161,4 +161,25 @@ def _break_segs(numbers:list,max_gap=5):
         segements[segement_number] = current_segement
         
     return segements
+
+def search_front_car(acc_image_hsv,hsv_space: HSVSpace):
     
+    mask = hsv_space.apply_mask(acc_image_hsv)
+    height = mask.shape[0]
+    for i in range(5,60,5):
+        y = height - i
+        line = mask[y,:]
+        point = np.nonzero(line)[0]
+        
+        if len(point) > 10:
+            
+            # there is a line
+            center = int(np.mean(point))
+            vline = np.nonzero(mask[:,center])
+            dis_equiv = len(vline[0])
+            return dis_equiv
+        else:
+            continue
+        
+    return None
+        

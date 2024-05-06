@@ -24,7 +24,7 @@ from dynamic_reconfigure.server import Server
 from vpa_demo.cfg import color_hsvConfig
 
 from visual.hsv import HSVSpace, from_cv_to_hsv, draw_test_mark_at_center
-from visual.search_pattern import search_buffer_line,search_line,search_lane_center,search_inter_guide_line
+from visual.search_pattern import search_buffer_line,search_line,search_lane_center,search_inter_guide_line,search_front_car
 
 from controller.lane_follow_controller import lane_pi_control
 from controller.line_follow_controller import line_pi_control
@@ -167,7 +167,7 @@ class VehicleMovement:
         self._thur_guide_hsv  = HSVSpace(30,0,250,170,230,130)  
     
         self.inter_guide_line = [self._thur_guide_hsv,self._left_guide_hsv,self._right_guide_hsv]
-
+        self._acc_aux_hsv     = HSVSpace(150,110,160,100,255,130)
         self._buffer_line_hsv = HSVSpace(160,125,140,10,240,200)
         self._exit_line_hsv   = HSVSpace(50,20,240,140,220,130)
 
@@ -303,10 +303,10 @@ class VehicleMovement:
             print(e)
 
         # the picture has been converted to opencv image format
-        
-        cv_image = cv_image[int(cv_image.shape[0]/4):cv_image.shape[0],:] 
+        acc_image   = cv_image[0:int(cv_image.shape[0]/4),:]
+        cv_image    = cv_image[int(cv_image.shape[0]/4):cv_image.shape[0],:] 
         # removing the upper 25% of the image when processing
-
+        acc_hsv_image = from_cv_to_hsv(acc_image)
         hsv_image = from_cv_to_hsv(cv_image)
         # convert cv image to the hsv image
 
@@ -451,12 +451,18 @@ class VehicleMovement:
 
             # since the cmd is sending on a higher frequency than ACC msg, we estimate the distance to further avoid collsions
             if self._acc_mode:
-                delta_last_acc = rospy.get_time() - self.acc_update_time
-                dis_est  = self.distance_acc - delta_last_acc * v_x 
-                v_factor = acc_pi_control(0.28,dis_est)
+                vis_dis2car = search_front_car(acc_hsv_image,self._acc_aux_hsv)
+                if not vis_dis2car == None:
+                    delta_last_acc = rospy.get_time() - self.acc_update_time
+                    dis_est  = self.distance_acc - delta_last_acc * v_x 
+                    v_factor = acc_pi_control(0.28,dis_est)
+                    cv2.line(cv_image,(90,100),(90,220),(255,255,255),2)
+                else:
+                    v_factor = 1
             else:
                 v_factor = 1
-
+            
+            
             self._sent_twist_cmd(v_x,omega_z,v_factor)
 
             # after a reconsideration, the check mask should not be locally, but we check on a remote machine with more graphical resources
