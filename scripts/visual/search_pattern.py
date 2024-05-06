@@ -3,7 +3,7 @@ from typing import Union
 from visual.hsv import HSVSpace
 import os
 
-script_dir  = os.path.dirname(os.path.abspath(__file__))
+script_dir  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 filepath    = os.path.join(script_dir,'robot_setting')
 
 if os.path.exists(filepath):
