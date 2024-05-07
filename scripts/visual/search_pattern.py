@@ -3,7 +3,6 @@ from typing import Union
 from visual.hsv import HSVSpace
 import os
 
-last_left_x = None
 
 script_dir  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 filepath    = os.path.join(script_dir,'robot_setting')
@@ -140,7 +139,6 @@ def search_inter_guide_line(hsv_space:HSVSpace,hsv_image,action:int):
 
 def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
     mask = hsv_space.apply_mask(hsv_image)
-    global last_left_x
     # handle the crossing (X) patterns on the guide lines
     height = int(hsv_image.shape[0])
     x_list = []
@@ -154,7 +152,8 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
             # print(y,line)
             seg1 = _break_segs(line1)
             seg2 = _break_segs(line2)
-
+            print('__')
+            print(len(seg1),len(seg2))
             if len(seg2) == 0:
                 # the further line missing
                 if len(seg1) == 0:
@@ -163,16 +162,16 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                     res = int(np.mean(seg1[0]))
             
             if len(seg2) == 1:
-                # one line in fornt
+                # one line in front
                 if len(seg1) == 1:
                     res = int(np.mean(seg1[0]))
                 if len(seg1) > 1:
                     res = int(np.mean(seg2[0]))
                 
-            if len(seg2) > 1:
+            if len(seg2) == 2:
                 if len(seg1) == 1:
                     res = int(np.mean(seg2[1]))
-                if len(seg1) == 2:
+                elif len(seg1) == 2:
                     n1 = abs(np.mean(seg1[0]) - np.mean(seg1[1]))
                     n2 = abs(np.mean(seg2[0]) - np.mean(seg2[1]))
                     if n1 > n2:
@@ -180,9 +179,8 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                         res = int(np.mean(seg1[1])) # follow lines on the right
                     else:
                         res = int(np.mean(seg1[0]))
-                
-                res = int(np.mean(seg2[0]))
-            
+                else:
+                    res = int(np.mean(seg2[0]))
             if res == None:
                 return res
             else:
