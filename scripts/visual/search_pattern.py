@@ -181,10 +181,8 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                     res = int(np.mean(seg2[0]))
             
             if res == None:
-                print('None')
                 return res
             else:
-                print(res)
                 temp =  max(min(res,LEFT_TURN_R),LEFT_TURN_L)
                 return temp
 
