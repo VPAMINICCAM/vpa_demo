@@ -152,8 +152,6 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
             # print(y,line)
             seg1 = _break_segs(line1)
             seg2 = _break_segs(line2)
-            print('__')
-            print(len(seg1),len(seg2))
             if len(seg2) == 0:
                 # the further line missing
                 if len(seg1) == 0:
@@ -181,9 +179,12 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                         res = int(np.mean(seg1[0]))
                 else:
                     res = int(np.mean(seg2[0]))
+            
             if res == None:
+                print('None')
                 return res
             else:
+                print(res)
                 temp =  max(min(res,LEFT_TURN_R),LEFT_TURN_L)
                 return temp
 
