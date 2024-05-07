@@ -20,8 +20,8 @@ def lane_pi_control(ref,sig):
     
     kp = 5
     ki = 0
-    vf = 0.35
-    vs = 0.35
+    vf = 0.3
+    vs = 0.3
     
     err = (ref - sig)/ref
 
