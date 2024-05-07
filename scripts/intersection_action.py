@@ -24,7 +24,7 @@ from dynamic_reconfigure.server import Server
 from vpa_demo.cfg import color_hsvConfig
 
 from visual.hsv import HSVSpace, from_cv_to_hsv, draw_test_mark_at_center
-from visual.search_pattern import search_buffer_line,search_line,search_lane_center,search_inter_guide_line,search_front_car
+from visual.search_pattern import search_buffer_line,search_line,search_lane_center,search_inter_guide_line,search_front_car,search_inter_guide_line2
 
 from controller.lane_follow_controller import lane_pi_control
 from controller.line_follow_controller import line_pi_control
@@ -403,7 +403,7 @@ class VehicleMovement:
                 if self._next_action == None:
                     print(self.last_node,self.this_node,self.next_node)
                     rospy.signal_shutdown('shutdown due to error next action')
-                line_x = search_inter_guide_line(self.inter_guide_line[self._next_action],hsv_image,self._next_action)
+                line_x = search_inter_guide_line2(self.inter_guide_line[self._next_action],hsv_image,self._next_action)
                 if line_x == None:
                     line_x = self.last_x
                 else:
