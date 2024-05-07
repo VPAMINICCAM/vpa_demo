@@ -414,7 +414,7 @@ class VehicleMovement:
                     rospy.logwarn('Invaild return of line_x')
                 # also search for intersection exit line
                 dis2exit = search_line(hsv_image,self._exit_line_hsv)
-                if dis2exit > 23:
+                if dis2exit > 20:
                     # the robot is sufficently close to exit the intersection
                     if rospy.get_time() - self.enter_inter_time > 0.2:
                         # leave intersections
