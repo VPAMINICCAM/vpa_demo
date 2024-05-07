@@ -3,6 +3,8 @@ from typing import Union
 from visual.hsv import HSVSpace
 import os
 
+last_left_x = None
+
 script_dir  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 filepath    = os.path.join(script_dir,'robot_setting')
 
@@ -40,12 +42,13 @@ def search_line(hsv_image,hsv_space:HSVSpace) -> Union[int, float]:
     lower_bound = int(hsv_image.shape[0]/2)
     upper_bound = 2 * lower_bound
     width_center = int(hsv_image.shape[1]/2)
-    point = np.nonzero(mask[lower_bound:upper_bound,width_center])[0]
-    if len(point) > 5:
-        return len(point)
-    else:
-        return 0 # no valid result found
-
+    for i in range(-50,100,50):
+        point = np.nonzero(mask[lower_bound:upper_bound,width_center+i])[0]
+        if len(point) > 5:
+            return len(point)
+        else:
+            continue # no valid result found
+    return 0
 def _search_lane_linecenter(_mask,_upper_bias:int,_lower_bias:int,_height_center:int,_interval:int,_width_range_left:int,_width_range_right:int) -> int:
     for i in range(_lower_bias,_upper_bias,_interval):
         point = np.nonzero(_mask[_height_center+i,_width_range_left:_width_range_right])[0] + _width_range_left
@@ -86,7 +89,7 @@ def search_inter_guide_line(hsv_space:HSVSpace,hsv_image,action:int):
     x_list = []
     if action == 1:
         # left turn
-        for i in range(30,170,20):
+        for i in range(80,170,20):
             y = height - i
             line = np.nonzero(mask[y,:])[0]
             # print(y,line)
@@ -137,13 +140,14 @@ def search_inter_guide_line(hsv_space:HSVSpace,hsv_image,action:int):
 
 def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
     mask = hsv_space.apply_mask(hsv_image)
-    
+    global last_left_x
     # handle the crossing (X) patterns on the guide lines
     height = int(hsv_image.shape[0])
     x_list = []
     if action == 1:
         # left turn
-        for i in range(30,170,20):
+        res = None
+        for i in range(60,170,20):
             y = height - i
             line1 = np.nonzero(mask[y,:])[0]
             line2 = np.nonzero(mask[y-20,:])[0]
@@ -155,7 +159,8 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                 # the further line missing
                 if len(seg1) == 0:
                     res =  None
-                res = int(np.mean(seg1[0]))
+                else:
+                    res = int(np.mean(seg1[0]))
             
             if len(seg2) == 1:
                 # one line in fornt
@@ -178,7 +183,11 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
                 
                 res = int(np.mean(seg2[0]))
             
-            return res
+            if res == None:
+                return res
+            else:
+                temp =  max(min(res,LEFT_TURN_R),LEFT_TURN_L)
+                return temp
 
     elif action == 2:
         # right turn
