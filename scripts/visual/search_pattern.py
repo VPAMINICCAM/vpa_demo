@@ -183,6 +183,8 @@ def search_inter_guide_line2(hsv_space:HSVSpace,hsv_image,action:int):
             if res == None:
                 return res
             else:
+                if res > 250:
+                    return None
                 temp =  max(min(res,LEFT_TURN_R),LEFT_TURN_L)
                 return temp
 
