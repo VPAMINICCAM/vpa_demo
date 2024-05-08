@@ -456,7 +456,7 @@ class VehicleMovement:
                     delta_last_acc = rospy.get_time() - self.acc_update_time
                     dis_est  = self.distance_acc - delta_last_acc * v_x 
                     v_factor = acc_pi_control(0.28,dis_est)
-                    cv2.line(cv_image,(90,100),(90,220),(255,255,255),2)
+                    cv2.line(cv_image,(100,90),(220,90),(0,0,0),2)
                 else:
                     v_factor = 1
             else:
