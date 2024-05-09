@@ -170,6 +170,8 @@ class VehicleMovement:
         self._acc_aux_hsv     = HSVSpace(150,110,160,100,255,130)
         self._buffer_line_hsv = HSVSpace(160,125,140,10,240,200)
         self._exit_line_hsv   = HSVSpace(50,20,240,140,220,130)
+        
+        self.task_line_hsv    = HSVSpace(100,50,255,3,255,150)
 
     def _request_task_init(self):
         rospy.loginfo("%s: Waiting for task server",self._robot_name)
@@ -352,7 +354,7 @@ class VehicleMovement:
                             rospy.logwarn("Self status invalid switch, buffer exit, ignoring...")
                 else:
                     # check ready line
-                    dis2ready = search_line(hsv_image,self._lane_hsv_1)
+                    dis2ready = search_line(hsv_image,self.task_line_hsv)
                     if dis2ready > 25:
                         # the robot is close enough to the ready area
                         self.find_task_line = True # Toggle the status
