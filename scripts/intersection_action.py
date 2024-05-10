@@ -84,7 +84,7 @@ class VehicleMovement:
         #     self.mask_pub_2 = rospy.Publisher("mask_2_image", Image, queue_size=1)
         #     self.mask_pub_3 = rospy.Publisher("mask_stop_image", Image, queue_size=1)
         
-        self.last_x = 0
+        self.last_x = 160
         
         if self._acc_mode:
             self.tof_sub    = rospy.Subscriber("tof_distance",Range,self.acc_dis_cb)
@@ -290,6 +290,7 @@ class VehicleMovement:
         
         if self.ask_task_by_period:
             resp = self._request_task_service(self.task_counter)
+            self.arrive_task_line = rospy.get_time()
             if not len(resp) == 0:
                 self._load_task_list(resp)
                 self.ask_task_by_period = False
@@ -335,7 +336,7 @@ class VehicleMovement:
                     dis2exit = search_line(hsv_image,self._lane_hsv_2)
                     if dis2exit > 25:
                         # The robot is sufficently close to the intersection exit (in a lane)
-                        if rospy.get_time() - self.left_inter_time > 0.2:
+                        if rospy.get_time() - self.arrive_task_line > 2:
                             # there is enough gap between last status change
                             self.enter_inter_time = rospy.get_time() # update time
                             self.track_part = Track.INTERSECTION
@@ -354,18 +355,20 @@ class VehicleMovement:
                             rospy.logwarn("Self status invalid switch, buffer exit, ignoring...")
                 else:
                     # check ready line
-                    dis2ready = search_line(hsv_image,self.task_line_hsv)
+                    dis2ready = search_line(hsv_image,self._lane_hsv_1)
                     if dis2ready > 25:
                         # the robot is close enough to the ready area
                         self.find_task_line = True # Toggle the status
                         resp = self._request_task_service(self.task_counter)
                         if len(resp) == 0:
+                            self.arrive_task_line = rospy.get_time()
                             # empty task returned
                             # this may be either the task assignment requries the robot to wait
                             # or there is no more mission -> there is going to be a signal shutdown
                             self.ask_task_by_period = True
                             self._pause_flag        = True # stop the robot
                         else:
+                            self.arrive_task_line = rospy.get_time()
                             self._load_task_list(resp)
 
             elif self.track_part == Track.LANE:
