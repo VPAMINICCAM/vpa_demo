@@ -314,7 +314,11 @@ class VehicleMovement:
         # convert cv image to the hsv image
         if self._pause_flag:
             # no need for further actions
-            cv2.circle(cv_image, (self.last_x,int(hsv_image.shape[0]/2)), 5, (255,255,100), 5)
+            self._sent_twist_cmd(0,0,0)
+            cv2.circle(cv_image, (self.last_x,int(hsv_image.shape[0]/2)), 5, (0,0,0), 5)
+            self._publish_image(self.result_pub,cv_image,False)
+            return None
+        
         if self._test_mode:
             cv_image = self.test_mode(hsv_image,cv_image)
             # this function creates a mark at the center of the picture (sliced)
@@ -462,7 +466,7 @@ class VehicleMovement:
                 if not vis_dis2car == None:
                     delta_last_acc = rospy.get_time() - self.acc_update_time
                     dis_est  = self.distance_acc - delta_last_acc * v_x 
-                    v_factor = acc_pi_control(0.35,dis_est)
+                    v_factor = acc_pi_control(0.4,dis_est)
                     cv2.line(cv_image,(100,90),(220,90),(0,0,0),2)
                 else:
                     v_factor = 1
