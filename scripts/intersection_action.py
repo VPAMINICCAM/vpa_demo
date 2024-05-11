@@ -312,7 +312,9 @@ class VehicleMovement:
         acc_hsv_image = from_cv_to_hsv(acc_image)
         hsv_image = from_cv_to_hsv(cv_image)
         # convert cv image to the hsv image
-
+        if self._pause_flag:
+            # no need for further actions
+            cv2.circle(cv_image, (self.last_x,int(hsv_image.shape[0]/2)), 5, (255,255,100), 5)
         if self._test_mode:
             cv_image = self.test_mode(hsv_image,cv_image)
             # this function creates a mark at the center of the picture (sliced)
