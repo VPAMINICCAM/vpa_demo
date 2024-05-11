@@ -7,3 +7,6 @@ RIGHT_TURN_R = 420
 
 THUR_L = 100
 THUR_R = 380
+
+LANE_L          = 80
+LANE_R          = 240
