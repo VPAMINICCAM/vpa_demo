@@ -100,6 +100,7 @@ class VehicleMovement:
 
     def shut_cb(self,msg:Bool):
         self.task_shut_flag = msg.data
+        print(self.task_shut_flag)
         rospy.loginfo_once("%s: no more tasks",self._robot_name)
 
     def acc_dis_cb(self,msg:Range):
@@ -318,6 +319,13 @@ class VehicleMovement:
             self._sent_twist_cmd(0,0,0)
             cv2.circle(cv_image, (self.last_x,int(hsv_image.shape[0]/2)), 5, (0,0,0), 5)
             self._publish_image(self.result_pub,cv_image,False)
+            if self.task_shut_flag and self.track_part == Track.BUFFER_AREA:
+                # stopped at pause line -> no guanrantee in position
+                _pub = rospy.Publisher('robot_interface_shutdown',Bool,queue_size=1)
+                msg = Bool()
+                msg.data = True
+                _pub.publish(msg)
+                rospy.signal_shutdown('Task finish flag set to True, shutting down the node.')
             return None
         
         if self._test_mode:
