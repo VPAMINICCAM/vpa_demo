@@ -100,6 +100,7 @@ class VehicleMovement:
 
     def shut_cb(self,msg:Bool):
         self.task_shut_flag = msg.data
+        rospy.loginfo("%s: no more tasks",self._robot_name)
 
     def acc_dis_cb(self,msg:Range):
         self.acc_update_time = msg.header.stamp.secs + msg.header.stamp.nsecs * 1e-9
