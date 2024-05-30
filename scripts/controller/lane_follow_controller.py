@@ -3,7 +3,7 @@ import rospy
 err_intergal = 0
 last_time_called = 0
 
-def lane_pi_control(ref,sig):
+def lane_pi_control(ref,sig,vf=0.3,vs=0.3):
     
     # kp: the p gain for this controller
     # ki: the i gain for this controller
@@ -20,8 +20,6 @@ def lane_pi_control(ref,sig):
     
     kp = 5
     ki = 0
-    vf = 0.3
-    vs = 0.3
     
     err = (ref - sig)/ref
 

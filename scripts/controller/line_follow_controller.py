@@ -3,7 +3,7 @@ import rospy
 err_intergal_l = 0
 last_time_called_l = 0
 
-def line_pi_control(ref,sig):
+def line_pi_control(ref,sig,vf=0.3,vs=0.3):
     
     # kp: the p gain for this controller
     # ki: the i gain for this controller
@@ -21,8 +21,6 @@ def line_pi_control(ref,sig):
 
     kp = 4
     ki = 0
-    vf = 0.3
-    vs = 0.3
     
     err = (ref - sig)/ref
 
