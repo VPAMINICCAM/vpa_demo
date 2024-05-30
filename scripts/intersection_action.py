@@ -15,7 +15,8 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # Service
 from vpa_demo.srv import AssignTask,InterManage
-
+# Message
+from vpa_demo.msg import velocity_ref
 # Map
 from map.local_map import local_mapper
 
@@ -47,6 +48,16 @@ class LaneDirection(Enum):
     RIGHT_HAND = True
     LEFT_HAND  = False
 
+class VelocitySet():
+    
+    def __init__(self) -> None:
+        self.v_f_lane   = 0.3
+        self.v_s_lane   = 0.3
+        self.v_f_inter  = 0.3
+        self.v_s_inter  = 0.3
+        self.v_f_buffer = 0.3
+        self.v_s_buffer = 0.3 
+        
 class VehicleMovement:
 
     def __init__(self,Nodename:str) -> None:
@@ -72,6 +83,10 @@ class VehicleMovement:
         
         self._bridge         = CvBridge()
 
+        # default settings
+
+        self.v_set = VelocitySet()
+        
         # init hsv color spaces for selecting 
         self._color_space_init()
 
@@ -94,6 +109,7 @@ class VehicleMovement:
         
         self.srv_color    = Server(color_hsvConfig,self.dynamic_reconfigure_callback_hsv)
         self.image_sub    = rospy.Subscriber("robot_cam/image_raw", Image, self._image_cb)
+        self.vel_sub      = rospy.Subscriber("op_vel_ref",velocity_ref,self.vel_cb)
         self._timer       = rospy.Timer(rospy.Duration(0.5),self._timer_cb)
         self.shutdown_sub = rospy.Subscriber("task_finish_shutdown",Bool,self.shut_cb)
         self.task_shut_flag = False
@@ -103,6 +119,17 @@ class VehicleMovement:
         print(self.task_shut_flag)
         rospy.loginfo_once("%s: no more tasks",self._robot_name)
 
+    def vel_cb(self,msg:velocity_ref):
+        self.v_set.v_f_lane = msg.v_f_lane
+        self.v_set.v_s_lane = msg.v_s_lane
+        
+        self.v_set.v_f_inter = msg.v_f_inter
+        self.v_set.v_s_inter = msg.v_s_inter
+        
+        self.v_set.v_f_buffer = msg.v_f_buffer
+        self.v_set.v_s_buffer = msg.v_s_buffer
+        
+    
     def acc_dis_cb(self,msg:Range):
         self.acc_update_time = msg.header.stamp.secs + msg.header.stamp.nsecs * 1e-9
         self.distance_acc = msg.range
@@ -462,11 +489,11 @@ class VehicleMovement:
 
             if self.track_part == Track.LANE:
                 # call lane follow controller
-                v_x, omega_z = lane_pi_control(int(hsv_image.shape[1]/2),line_x)
+                v_x, omega_z = lane_pi_control(int(hsv_image.shape[1]/2),line_x,self.v_set.v_f_lane,self.v_set.v_s_lane)
             elif self.track_part == Track.INTERSECTION:
-                v_x, omega_z = line_pi_control(int(hsv_image.shape[1]/2),line_x)
+                v_x, omega_z = line_pi_control(int(hsv_image.shape[1]/2),line_x,self.v_set.v_f_inter,self.v_set.v_s_buffer)
             else:
-                v_x, omega_z = buffferline_pi_control(int(hsv_image.shape[1]/2),line_x)
+                v_x, omega_z = buffferline_pi_control(int(hsv_image.shape[1]/2),line_x,self.v_set.v_f_buffer,self.v_set.v_s_buffer)
 
 
             # since the cmd is sending on a higher frequency than ACC msg, we estimate the distance to further avoid collsions
