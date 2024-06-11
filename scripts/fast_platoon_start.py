@@ -14,7 +14,7 @@ class FastPlatoonStart:
         self.kick_in = True
         self.kick_in_sub = rospy.Subscriber('/fast_start_flag',Bool,self.kick_cb)
         self.cmd_pub = rospy.Publisher('cmd_vel',Twist,queue_size=1)
-        
+        rospy.loginfo('fast start standby')
     def repo_cmd(self,data:Twist):
         msg = Twist()
         if self.kick_in:

@@ -1,6 +1,9 @@
 <launch>
+    <arg name="robot_name" value="$(env robot_name)"/>
     <include file="$(find vpa_demo)/launch/smart_intersection.launch">
         <remap from="cmd_vel" to="cmd_vel_raw"/>
     </include>
-    <node name="fast_platoon_start_cmd" pkg="vpa_demo" type="fast_platoon_start.py" required="true"/>
+    <group ns="$(arg robot_name)">
+        <node name="fast_platoon_start_cmd" pkg="vpa_demo" type="fast_platoon_start.py" required="true" output="screen"/>
+    </group>
 </launch>
