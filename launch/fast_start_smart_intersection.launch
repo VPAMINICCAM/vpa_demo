@@ -1,9 +1,44 @@
 <launch>
     <arg name="robot_name" value="$(env robot_name)"/>
-    <include file="$(find vpa_demo)/launch/smart_intersection.launch">
-        <remap from="cmd_vel" to="cmd_vel_raw"/>
-    </include>
+    <arg name="test_mode" default="false"/> 
+    <arg name="acc_on" default="true"/>
+    <arg name="publish_mask" default="false"/>
+    <!-- multi-robot operation -->
     <group ns="$(arg robot_name)">
+        <node pkg="vpa_demo" name="lane_operation" type="intersection_action.py" output="screen">
+        <!-- lane detecting - yellow lane -->
+        <param name="h_lower_1"            value="80"/>
+        <param name="s_lower_1"            value="80"/>
+        <param name="v_lower_1"            value="150"/>
+        <param name="h_upper_1"            value="100"/>
+        <param name="s_upper_1"            value="255"/>
+        <param name="v_upper_1"            value="255"/>
+        <!-- lane detecting - white lane -->
+        <param name="h_lower_2"            value="25"/>
+        <param name="s_lower_2"            value="0"/>
+        <param name="v_lower_2"            value="200"/>
+        <param name="h_upper_2"            value="100"/>
+        <param name="s_upper_2"            value="60"/>
+        <param name="v_upper_2"            value="255"/>
+        <!-- stop line (red)-->
+        <param name="h_lower_s"            value="110"/>
+        <param name="s_lower_s"            value="120"/>
+        <param name="v_lower_s"            value="170"/>
+        <param name="h_upper_s"            value="145"/>
+        <param name="s_upper_s"            value="180"/>
+        <param name="v_upper_s"            value="235"/>
+        <!-- front car (something)-->
+        <param name="robot_name"           value="$(arg robot_name)"/>
+        <!-- mask publish banned in multi-robot -->
+        </node>
+        <include file="$(find vpa_robot_interface)/launch/vpa_camera.launch"/>
+        <include file="$(find vpa_robot_interface)/launch/vpa_traction_start.launch">
+            <remap from="cmd_vel" to="cmd_vel_raw"/>
+        </include>
+        <group if="$(arg acc_on)"> 
+            <include file="$(find vpa_robot_interface)/launch/vpa_tof.launch"/>
+        </group>
         <node name="fast_platoon_start_cmd" pkg="vpa_demo" type="fast_platoon_start.py" required="true" output="screen"/>
+        <node name="republish_result" pkg="image_transport" type="republish" args="raw in:=result_image compressed out:=result_image" />
     </group>
 </launch>
