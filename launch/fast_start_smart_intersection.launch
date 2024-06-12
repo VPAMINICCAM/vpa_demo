@@ -30,10 +30,10 @@
         <!-- front car (something)-->
         <param name="robot_name"           value="$(arg robot_name)"/>
         <!-- mask publish banned in multi-robot -->
+        <remap from="cmd_vel" to="cmd_vel_raw"/>
         </node>
         <include file="$(find vpa_robot_interface)/launch/vpa_camera.launch"/>
         <include file="$(find vpa_robot_interface)/launch/vpa_traction_start.launch">
-            <remap from="cmd_vel" to="cmd_vel_raw"/>
         </include>
         <group if="$(arg acc_on)"> 
             <include file="$(find vpa_robot_interface)/launch/vpa_tof.launch"/>

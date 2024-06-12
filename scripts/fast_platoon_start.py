@@ -11,18 +11,26 @@ class FastPlatoonStart:
     
     def __init__(self) -> None:
         self.ori_sub = rospy.Subscriber('cmd_vel_raw',Twist,self.repo_cmd)
-        self.kick_in = True
+        self.kick_in = False
         self.kick_in_sub = rospy.Subscriber('/fast_start_flag',Bool,self.kick_cb)
         self.cmd_pub = rospy.Publisher('cmd_vel',Twist,queue_size=1)
         rospy.loginfo('fast start standby')
     def repo_cmd(self,data:Twist):
         msg = Twist()
         if self.kick_in:
-            rever_coff = 0.3/data.linear.x
+            if data.linear.x == 0:
+                msg.linear.x = 0.3
+                msg.angular.z = 0
+                self.cmd_pub.publish(msg)
+            else:
+                
+                rever_coff = 0.3/data.linear.x
             
-            msg.linear.x = 0.3
-            msg.angular.z = data.angular.z * rever_coff
-        self.cmd_pub.publish(data)
+                msg.linear.x = 0.3
+                msg.angular.z = data.angular.z * rever_coff
+                self.cmd_pub.publish(data)
+        else:
+            self.cmd_pub.publish(data)
     
     def kick_cb(self,data:Bool):
         self.kick_in = data.data
