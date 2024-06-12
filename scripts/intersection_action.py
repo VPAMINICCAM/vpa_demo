@@ -111,8 +111,9 @@ class VehicleMovement:
         self.image_sub    = rospy.Subscriber("robot_cam/image_raw", Image, self._image_cb)
         self.vel_sub      = rospy.Subscriber("op_vel_ref",velocity_ref,self.vel_cb)
         self._timer       = rospy.Timer(rospy.Duration(0.5),self._timer_cb)
-        self.shutdown_sub = rospy.Subscriber("task_finish_shutdown",Bool,self.shut_cb)
         self.task_shut_flag = False
+        self.shutdown_sub = rospy.Subscriber("task_finish_shutdown",Bool,self.shut_cb)
+        
 
     def shut_cb(self,msg:Bool):
         self.task_shut_flag = msg.data
