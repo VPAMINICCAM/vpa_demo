@@ -7,7 +7,7 @@ def acc_pi_control(ref, sig):
 
     global err_integral_acc,last_updated_acc  # Declare the use of the global variable
 
-    kp = -12  # Proportional gain
+    kp = -10  # Proportional gain
     ki = 0   # Integral gain
 
     if last_updated_acc == 0:

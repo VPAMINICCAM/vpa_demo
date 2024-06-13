@@ -500,7 +500,6 @@ class VehicleMovement:
             # since the cmd is sending on a higher frequency than ACC msg, we estimate the distance to further avoid collsions
             if self._acc_mode:
                 vis_dis2car = search_front_car(acc_hsv_image,self._acc_aux_hsv)
-                print(vis_dis2car)
                 if not vis_dis2car == None:
                     delta_last_acc = rospy.get_time() - self.acc_update_time
                     dis_est  = self.distance_acc - delta_last_acc * v_x 
@@ -510,7 +509,6 @@ class VehicleMovement:
                     v_factor = 1
             else:
                 v_factor = 1
-            print(v_factor)
             
             self._sent_twist_cmd(v_x,omega_z,v_factor)
 
