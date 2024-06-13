@@ -15,7 +15,7 @@ def acc_pi_control(ref, sig):
         last_updated_acc = rospy.get_time()
 
 
-    if sig > 0.4:
+    if sig > 0.5:
         v_factor = 1
         err_integral_acc = 0  # Reset the integral component when signal is high
     else:
