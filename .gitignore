@@ -29,7 +29,3 @@
 *.rosinstall
 /rosinstall
 /.catkin_workspace
-
-# Ignore the robot_setting folder inside the scripts directory
-scripts/robot_setting/
-scripts/virtual_debug.py
