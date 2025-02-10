@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   rospy
   std_msgs
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -50,7 +51,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  velocity_ref.msg
+  TrajectoryPoint.msg
+  TimeBasePath.msg
   # Message1.msg
   # Message2.msg
 )
@@ -58,8 +60,6 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  AssignTask.srv
-  InterManage.srv
   #Service2.srv
 )
 
@@ -93,7 +93,6 @@ generate_messages(
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
 #   cfg/DynReconf1.cfg
-  config/color_hsv.cfg
 )
 
 ###################################
