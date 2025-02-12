@@ -1,8 +1,4 @@
 import math
-import rospy
-from geometry_msgs.msg import Point, Quaternion
-from vpa_demo.msg import TrajectoryPoint, TimeBasedPath
-from std_msgs.msg import Header
 
 def generate_trajectory_turn(direction: int) -> list:
     speed = 0.3  # m/s

@@ -1,6 +1,6 @@
 <launch>
     <!-- Launch the encoder node -->
-    <node name="encoder_node" pkg="vpa_demo" type="encoder_odometry" output="screen" required="true">
+    <node name="encoder_node" pkg="vpa_demo" type="encoder_odometry.py" output="screen" required="true">
         <!-- Add any necessary parameters or remappings here -->
     </node>
 

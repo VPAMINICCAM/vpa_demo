@@ -90,6 +90,7 @@ class EncoderOdometry:
         if self.running:
             rospy.loginfo("Encoder odometry node has been started.")
         else:
+            self.reset_odometry()
             rospy.loginfo("Encoder odometry node has been stopped.")
     
     def reset_odometry(self):

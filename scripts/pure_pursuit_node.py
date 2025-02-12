@@ -114,4 +114,9 @@ class PurePursuitTurnNode:
             rate.sleep()
 
 if __name__ == '__main__':
-    pass
+    node = PurePursuitTurnNode()
+    try:
+        node.run()
+        rospy.spin()  # Keep the node running
+    except rospy.ROSInterruptException:
+        pass
