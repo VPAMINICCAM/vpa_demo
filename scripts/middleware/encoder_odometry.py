@@ -2,7 +2,7 @@
 
 import rospy
 import math
-from std_msgs.msg import Header, Bool
+from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Twist, Pose
 from vpa_robot_interface.msg import WheelsEncoder

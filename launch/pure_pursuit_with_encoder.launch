@@ -1,0 +1,11 @@
+<launch>
+    <!-- Launch the encoder node -->
+    <node name="encoder_node" pkg="vpa_demo" type="encoder_odometry" output="screen" required="true">
+        <!-- Add any necessary parameters or remappings here -->
+    </node>
+
+    <!-- Launch the pure_pursuit node -->
+    <node name="pure_pursuit_turn_node" pkg="vpa_demo" type="pure_pursuit_node.py" output="screen" required="true">
+        <!-- Add any necessary parameters or remappings here -->
+    </node>
+</launch>

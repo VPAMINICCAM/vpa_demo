@@ -1,112 +1,73 @@
-#!/usr/bin/env python3
+import numpy as np
 
-import rospy
-import math
-from nav_msgs.msg import Odometry
-from vpa_demo.msg import TimeBasedPath, TrajectoryPoint
-from geometry_msgs.msg import Twist
-import time
+class PurePursuitController:
+    """
+    Pure Pursuit Controller for Time-Space Tracking.
 
-class PurePursuit:
-    def __init__(self):
-        rospy.init_node('pure_pursuit_node')
-        
-        # Load parameters
-        self.L_min = rospy.get_param('~L_min', 0.5)
-        self.k = rospy.get_param('~k', 1.0)
-        self.max_speed = rospy.get_param('~max_speed', 1.0)
-        self.max_yaw_rate = rospy.get_param('~max_yaw_rate', 1.0)
-        
-        # Subscribers
-        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
-        self.traj_sub = rospy.Subscriber('trajectory', TimeBasedPath, self.traj_callback)
-        
-        # Publisher
-        self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-        
-        self.trajectory = []
-        self.current_index = 0  # Track the current index in the trajectory
-        self.x_r, self.y_r, self.theta_r, self.v = 0.0, 0.0, 0.0, 0.0
-        self.start_time = time.time()
-        
-        self.control_loop()
-    
-    def traj_callback(self, msg):
-        # Ensure the trajectory is properly read by checking the message type and content
-        if isinstance(msg, TimeBasedPath):
-            self.trajectory = [(wp.position.x, wp.position.y, self.quaternion_to_euler(wp.orientation)[2], wp.time_from_start) for wp in msg.points]
-            self.current_index = 0  # Reset the current index when a new trajectory is received
-            self.start_time = time.time()  # Reset the start time
-        else:
-            rospy.logwarn("Received message is not of type TimeBasedPath")
-    
-    def odom_callback(self, msg):
-        pose = msg.pose.pose
-        self.x_r = pose.position.x
-        self.y_r = pose.position.y
-        _, _, self.theta_r = self.quaternion_to_euler(pose.orientation)
-        self.v = math.sqrt(msg.twist.twist.linear.x**2 + msg.twist.twist.linear.y**2)
-    
-    def quaternion_to_euler(self, orientation):
-        qx, qy, qz, qw = orientation.x, orientation.y, orientation.z, orientation.w
-        siny_cosp = 2 * (qw * qz + qx * qy)
-        cosy_cosp = 1 - 2 * (qy**2 + qz**2)
-        return 0.0, 0.0, math.atan2(siny_cosp, cosy_cosp)  # roll, pitch, yaw
-    
-    def compute_L_d(self):
-        return max(self.L_min, self.k * self.v)
-    
-    def find_pursuit_point(self):
-        if not self.trajectory:
-            return None
-        
-        L_d = self.compute_L_d()
-        for i in range(self.current_index, len(self.trajectory)):
-            x_p, y_p, theta_p, t_p = self.trajectory[i]
-            if math.sqrt((x_p - self.x_r)**2 + (y_p - self.y_r)**2) >= L_d:
-                self.current_index = i  # Update the current index to the next point
-                return x_p, y_p, theta_p, t_p
-        return self.trajectory[-1]
-    
-    def compute_cmd_vel(self):
-        pursuit_point = self.find_pursuit_point()
-        if pursuit_point is None:
-            return None
-        
-        x_p, y_p, theta_p, t_p = pursuit_point
-        distance_to_pursuit = math.sqrt((x_p - self.x_r)**2 + (y_p - self.y_r)**2)
-        current_time = time.time() - self.start_time
-        time_to_pursuit = t_p - current_time
-        
-        if time_to_pursuit <= 0:
-            linear_speed = 0
-        else:
-            linear_speed = min(self.max_speed, distance_to_pursuit / time_to_pursuit)
-        
-        # Ensure the linear speed does not exceed the maximum speed
-        linear_speed = min(linear_speed, self.max_speed)
-        
-        theta_d = math.atan2(y_p - self.y_r, x_p - self.x_r)
-        omega = (2 * self.v * math.sin(theta_d - self.theta_r)) / self.compute_L_d()
-        
-        # Clamp omega
-        omega = max(-self.max_yaw_rate, min(self.max_yaw_rate, omega))
-        
-        cmd = Twist()
-        cmd.linear.x = linear_speed
-        cmd.angular.z = omega
-        return cmd
-    
-    def control_loop(self):
-        rate = rospy.Rate(50)  # 50 Hz
-        while not rospy.is_shutdown():
-            cmd = self.compute_cmd_vel()
-            if cmd:
-                self.cmd_pub.publish(cmd)
-            rate.sleep()
-    
-if __name__ == '__main__':
-    try:
-        PurePursuit()
-    except rospy.ROSInterruptException:
-        pass
+    This controller selects a target point along a predefined trajectory using a lookahead time offset.
+    It computes a desired speed to cover the distance to that target point in the lookahead time,
+    and it computes a yaw rate using the pure pursuit method. The yaw rate is saturated to ±3 rad/s.
+
+    Attributes:
+        trajectory (list): A list of trajectory points. Each point must have attributes:
+                           x, y, theta, and time_from_start.
+        lookahead_time (float): The time offset [s] used to select the target point.
+        max_speed (float): Maximum allowable speed [m/s].
+    """
+
+    def __init__(self, trajectory, lookahead_time, max_speed):
+        self.trajectory = trajectory
+        self.lookahead_time = lookahead_time
+        self.max_speed = max_speed
+
+    def compute_control(self, state, current_time, yaw_rate_bound=3):
+        """
+        Compute the control commands based on the current state and time.
+
+        Args:
+            state: The current vehicle state. Must have attributes: x, y, and yaw.
+            current_time (float): The current simulation time in seconds.
+
+        Returns:
+            tuple: (desired_speed, yaw_rate)
+                   - desired_speed (float): The computed linear speed [m/s].
+                   - yaw_rate (float): The computed yaw rate [rad/s], saturated within [-3, 3].
+        """
+        # Check if the destination is reached (within a threshold)
+        final_point = self.trajectory[-1]
+        if np.hypot(final_point.x - state.x, final_point.y - state.y) < 0.01:
+            return 0.0, 0.0
+
+        # Select the target point based on lookahead time
+        target_time = current_time + self.lookahead_time
+        target_point = None
+        for pt in self.trajectory:
+            if pt.time_from_start >= target_time:
+                target_point = pt
+                break
+        if target_point is None:
+            target_point = final_point
+
+        # Compute the Euclidean distance to the target point
+        d_target = np.hypot(target_point.x - state.x, target_point.y - state.y)
+        # Compute the desired speed so that d_target is covered in lookahead_time,
+        # but do not exceed the maximum allowed speed.
+        desired_speed = np.clip(d_target / self.lookahead_time, 0, self.max_speed)
+
+        # Transform the target point into the vehicle's coordinate frame.
+        dx = target_point.x - state.x
+        dy = target_point.y - state.y
+        x_local = np.cos(state.yaw) * dx + np.sin(state.yaw) * dy
+        y_local = -np.sin(state.yaw) * dx + np.cos(state.yaw) * dy
+
+        # Compute the angle to the target point in the vehicle frame.
+        alpha = np.arctan2(y_local, x_local)
+
+        # Compute curvature using the pure pursuit method.
+        curvature = 2 * np.sin(alpha) / d_target if d_target != 0 else 0
+        yaw_rate = desired_speed * curvature
+
+        # Saturate the yaw rate to ±3 rad/s.
+        yaw_rate = np.clip(yaw_rate, -yaw_rate_bound, yaw_rate_bound)
+
+        return desired_speed, yaw_rate

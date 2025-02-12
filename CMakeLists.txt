@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   nav_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,8 +52,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  TrajectoryPoint.msg
-  TimeBasePath.msg
   # Message1.msg
   # Message2.msg
 )
@@ -107,7 +106,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES vpa_demo
-  CATKIN_DEPENDS dynamic_reconfigure message_generation rospy std_msgs message_runtime
+  CATKIN_DEPENDS dynamic_reconfigure message_generation rospy std_msgs message_runtime tf
 #  DEPENDS system_lib
 )
 
