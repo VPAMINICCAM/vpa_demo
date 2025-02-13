@@ -119,9 +119,11 @@ class PurePursuitTurnNode:
                 if distance_to_goal < 0.05:  # Threshold distance to stop
                     rospy.loginfo('%s: Reached the goal', self.robot_name)
                     self.running = False
-                    self.reset()
+                    
                     twist.linear.x = 0
                     twist.angular.z = 0
+                    self.pub_cmd.publish(twist)
+                    self.reset()
 
                 self.pub_cmd.publish(twist)
                 self.cur_time += 1.0 / self.loop_freq
