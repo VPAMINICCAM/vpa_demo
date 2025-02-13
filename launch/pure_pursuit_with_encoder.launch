@@ -9,6 +9,7 @@
         <!-- Add any necessary parameters or remappings here -->
     </node>
 
-    <!-- Include the vpa_traction_start.launch from vpa_robot_interface package -->
-    <include file="$(find vpa_robot_interface)/launch/vpa_traction_start.launch" />
+    <!-- Include the vpa_traction_start.launch from vpa_robot_interface package if the argument is true -->
+    <arg name="include_vpa_traction" default="false" />
+    <include file="$(find vpa_robot_interface)/launch/vpa_traction_start.launch" if="$(arg include_vpa_traction)" />
 </launch>
