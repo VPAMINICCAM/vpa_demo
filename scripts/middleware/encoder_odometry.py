@@ -2,6 +2,7 @@
 
 import rospy
 import math
+import socket
 from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Twist, Pose
@@ -10,7 +11,7 @@ from vpa_robot_interface.msg import WheelsEncoder
 class EncoderOdometry:
     def __init__(self):
         rospy.init_node('encoder_odometry_node')
-        
+        self.robot_name = socket.gethostname()
         # Parameters
         self.ticks_per_rev = 145
         self.wheel_radius = 0.0318  # meters
@@ -26,12 +27,12 @@ class EncoderOdometry:
         self.running = False  # Default state is stopped
         
         # Subscribers
-        self.encoder_sub = rospy.Subscriber('wheels_encoder', WheelsEncoder, self.encoder_callback)
+        self.encoder_sub = rospy.Subscriber('wheel_omega', WheelsEncoder, self.encoder_callback)
         self.control_sub = rospy.Subscriber('control_odometry', Bool, self.control_callback)
         
         # Publisher
         self.odom_pub = rospy.Publisher('odom', Odometry, queue_size=10)
-        
+        rospy.loginfo("%s: Encoder odometry node has been initialized.",self.robot_name)
         rospy.spin()
     
     def encoder_callback(self, msg):
@@ -46,7 +47,7 @@ class EncoderOdometry:
         delta_right_ticks = msg.right_ticks - self.prev_right_ticks
         distance_left = (2 * math.pi * self.wheel_radius * delta_left_ticks) / self.ticks_per_rev
         distance_right = (2 * math.pi * self.wheel_radius * delta_right_ticks) / self.ticks_per_rev
-        
+
         # Calculate the change in position and orientation
         delta_distance = (distance_left + distance_right) / 2.0
         delta_theta = (distance_right - distance_left) / self.wheel_base
@@ -54,6 +55,7 @@ class EncoderOdometry:
         # Update the robot's position and orientation
         self.x += delta_distance * math.cos(self.theta + delta_theta / 2.0)
         self.y += delta_distance * math.sin(self.theta + delta_theta / 2.0)
+
         self.theta += delta_theta
         
         # Normalize theta to the range [-pi, pi]
@@ -66,9 +68,6 @@ class EncoderOdometry:
         odom.pose.pose.position.x = self.x
         odom.pose.pose.position.y = self.y
         odom.pose.pose.orientation = Quaternion(*self.euler_to_quaternion(0, 0, self.theta))
-        odom.twist.twist = Twist()
-        odom.twist.twist.linear.x = delta_distance / dt
-        odom.twist.twist.angular.z = delta_theta / dt
         
         # Publish the odometry message
         self.odom_pub.publish(odom)
@@ -88,10 +87,10 @@ class EncoderOdometry:
     def control_callback(self, msg):
         self.running = msg.data
         if self.running:
-            rospy.loginfo("Encoder odometry node has been started.")
+            rospy.loginfo("%s: Encoder odometry node has been started.",self.robot_name)
         else:
             self.reset_odometry()
-            rospy.loginfo("Encoder odometry node has been stopped.")
+            rospy.loginfo("%s: Encoder odometry node has been stopped.",self.robot_name)
     
     def reset_odometry(self):
         self.x = 0.0
@@ -101,7 +100,7 @@ class EncoderOdometry:
         self.prev_right_ticks = 0
         self.prev_time = rospy.Time.now()
         self.running = True
-        rospy.loginfo("Encoder odometry has been reset.")
+        rospy.loginfo("%s: Encoder odometry has been reset.",self.robot_name)
 
 if __name__ == '__main__':
     try:
