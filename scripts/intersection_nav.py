@@ -3,10 +3,25 @@
 import rospy
 import numpy as np
 import socket
-from std_msgs.msg import Bool
+import math
+from std_msgs.msg import Bool,Int32
 from sensor_msgs.msg import Image
-from middleware.apriltag_pose import get_camera_pose_in_base
+# from middleware.apriltag_pose import get_camera_pose_in_base
+from middleware.apriltag_pose_dt import AprilTagPoseEstimator  # ✅ Updated Import
 from nav_msgs.msg import Odometry
+
+def yaw_to_quaternion(yaw_angle_rad):
+    # Since roll = pitch = 0, the quaternion conversion simplifies:
+    qz = math.sin(yaw_angle_rad / 2.0)
+    qw = math.cos(yaw_angle_rad / 2.0)
+    return [0.0, 0.0, qz, qw]
+
+# def extract_position_and_yaw(T):
+#     """ Extract position and yaw angle from transformation matrix T """
+#     position = T[:3, 3]  # ✅ Always take the last column
+
+#     yaw = math.atan2(T[1, 0], T[0, 0])  # Extract yaw from rotation matrix
+#     return position, yaw
 
 class IntersectionNav:
     # Initialize IntersectionNav class
@@ -21,23 +36,50 @@ class IntersectionNav:
         # get turn index from launch file for debug, #TODO: requested from higher planning in real operation
         self.turn_index = rospy.get_param('~turn_index', 0)
         # publish this to pure_pursuit to navigate the intersection
-        self.turn_pub = rospy.Publisher('turn_index', Bool, queue_size=1)
+        self.turn_pub = rospy.Publisher('turn_direction', Int32, queue_size=1)
 
         # flag allowing the robot to start turning
         self.start_turn = False
         self.start_turn_pub = rospy.Publisher('start_turn', Bool, queue_size=1)
 
+        # finish turn
+        self.is_turn_finish = False
+        self.fin_sub = rospy.Subscriber('turn_end', Bool, self.fin_callback)
         # publish initial pose for pure pursuit
         self.odom_pub = rospy.Publisher('initial_pose', Odometry, queue_size=1)
+        
+        self.found_ref_tag = False
 
-        # define reference mark id = 200, size = 0.064m, coordinates (0.06,0,0)
+        # start odom
+        self.control_odom_pub = rospy.Publisher('control_odometry',Bool,queue_size=1)
+
         self.ref_tag_id = 200
         self.ref_tag_size = 0.064
-        self.ref_tag_pose = np.array([0.06, 0, 0])
+
+        # ✅ Use the new pose estimator class
+        self.pose_estimator = AprilTagPoseEstimator(tag_size=self.ref_tag_size)
+
+        # self.T_reftag_to_inter = np.array([
+        #     [ 0, -1, 0, 0   ],
+        #     [-1,  0, 0, 0.06],
+        #     [ 0,  0, 1, 0   ],
+        #     [ 0,  0, 0, 1   ]
+        # ])
         # loginfo ready
         rospy.loginfo("%s: IntersectionNav node ready", self.robot_name)
         # run
         self.run()
+
+    def fin_callback(self,msg):
+        if self.is_intersection:
+            self.is_turn_finish = msg.data
+            if self.is_turn_finish:
+                rospy.loginfo('%s: Inter Nav complete, sleeping...',self.robot_name)
+                self.control_odom_pub.publish(Bool(False))
+                self.start_turn_pub.publish(Bool(False))
+                self.is_intersection    = False
+                self.is_turn_finish     = False
+
 
     def intersection_callback(self, msg):
         # Callback function for intersection trigger
@@ -53,42 +95,42 @@ class IntersectionNav:
             if self.is_intersection:
                 # get initial pose from apriltag_pose
                 # wait_for_message from camera, just one frame. topic name 'robot_cam/image_raw'
-                self.image = rospy.wait_for_message('robot_cam/image_raw', Image)
-                tag_poses = get_camera_pose_in_base(self.image, tag_size=self.ref_tag_size, cv_debug=False)
-                attempt_count += 1
-                found_ref_tag = False
-                for T_base_to_tag, detection in tag_poses:
-                    # get id from detection
-                    id = detection.tag_id
-                    # check if id is the reference tag
-                    if id == self.ref_tag_id:
-                        found_ref_tag = True
-                        # this is the tag mark
-                        # Calculate the pose of the robot (base) relative to the reference tag
-                        tag_pose = T_base_to_tag[:3, 3]
-                        robot_pose = tag_pose - self.ref_tag_pose
+                if not self.found_ref_tag:
+                    self.image = rospy.wait_for_message('robot_cam/image_raw', Image)
+        
+                    attempt_count += 1
+                    try:
+                        x, y, theta = self.pose_estimator.get_x_y_theta(self.image, t_tag_to_world=np.array([0, 0.06, 0]))
+                        self.found_ref_tag = True
+                        self.turn_pub.publish(Int32(self.turn_index))
+                        rospy.loginfo("%s: Robot position: x=%.2f, y=%.2f", self.robot_name, x,y)
+                        rospy.loginfo("%s: Robot yaw: %.2f degrees", self.robot_name, math.degrees(robot_yaw))
 
-                        # Log the calculated robot pose (x, y)
-                        rospy.loginfo("%s: Robot pose calculated: (x: %f, y: %f)", self.robot_name, robot_pose[0], robot_pose[1])
 
                         # Publish the initial pose for pure pursuit
                         odom_msg = Odometry()
-                        odom_msg.pose.pose.position.x = robot_pose[0]
-                        odom_msg.pose.pose.position.y = robot_pose[1]
-                        odom_msg.pose.pose.position.z = robot_pose[2]
+                        odom_msg.pose.pose.position.x = x
+                        odom_msg.pose.pose.position.y = y
+                        odom_msg.pose.pose.position.z = 0
+                        quat = yaw_to_quaternion(theta)
+                        odom_msg.pose.pose.orientation.x = quat[0]
+                        odom_msg.pose.pose.orientation.y = quat[1]
+                        odom_msg.pose.pose.orientation.z = quat[2]
+                        odom_msg.pose.pose.orientation.w = quat[3]
+                        rospy.sleep(0.2)
                         self.odom_pub.publish(odom_msg)
 
-                        # Publish the turn index
-                        self.turn_pub.publish(Bool(self.turn_index))
-
+                        self.control_odom_pub.publish(Bool(True))
+                        rospy.sleep(0.2)
                         # Set the start_turn flag to True and publish it
-                        self.start_turn = True
-                        self.start_turn_pub.publish(Bool(self.start_turn))
+                        self.start_turn_pub.publish(Bool(True))
+                        rospy.loginfo('%s: InterNav: OK to Turn', self.robot_name)
                         attempt_count = 0
-                        self.is_intersection = False
                         break
+                    except ValueError as e:
+                        rospy.logwarn("%s: AprilTag detection failed: %s", self.robot_name, str(e))
 
-                if not found_ref_tag:
+                if not self.found_ref_tag:
                     rospy.logwarn("%s: Reference tag ID %d not found", self.robot_name, self.ref_tag_id)
                 if attempt_count > 10:
                     rospy.logwarn("%s: Reference tag not found after 10 attempts", self.robot_name)
@@ -97,7 +139,7 @@ class IntersectionNav:
                     # Signal shutdown
                     rospy.signal_shutdown("Reference tag not found after 10 attempts")
                     break
-
+            
             rate.sleep()
 
 if __name__ == '__main__':
