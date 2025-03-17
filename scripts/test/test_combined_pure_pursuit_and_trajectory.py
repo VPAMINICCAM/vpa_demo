@@ -33,8 +33,8 @@ def run_test(direction, title, ax_traj, ax_speed):
     trajectory_points = [TrajectoryPoint(*point) for point in trajectory_points]
     
     # Initialize the Pure Pursuit Controller
-    lookahead_time = 0.5  # seconds
-    max_speed = 1.0  # m/s
+    lookahead_time = 0.2  # seconds
+    max_speed = 0.5  # m/s
     controller = PurePursuitController(trajectory_points, lookahead_time, max_speed)
     
     # Initial state of the robot
@@ -44,7 +44,7 @@ def run_test(direction, title, ax_traj, ax_speed):
             self.y = y
             self.yaw = yaw
     
-    state = State(-0.22, 0.01, -0.4)
+    state = State(-0.13, 0, -5*3.14/180)
     current_time = 0.0
     dt = 1.0 / 20.0  # 20Hz update rate
     

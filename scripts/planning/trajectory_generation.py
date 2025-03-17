@@ -87,6 +87,15 @@ def generate_trajectory_turn(direction: int) -> list:
             point = [x, y, theta, t]
             
             trajectory_points.append(point)
+        end_y = y
+        duration = 0.1 / speed 
+        for i in range(num_points + 1):
+            t = i * (duration / num_points)
+            y = -speed * t + end_y
+            
+            point = [x, y, theta, t]
+            
+            trajectory_points.append(point)
 
     return trajectory_points
 
