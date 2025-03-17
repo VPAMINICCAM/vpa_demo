@@ -44,7 +44,7 @@ def run_test(direction, title, ax_traj, ax_speed):
             self.y = y
             self.yaw = yaw
     
-    state = State(-0.08, 0.08, 0.0)
+    state = State(-0.22, 0.01, -0.4)
     current_time = 0.0
     dt = 1.0 / 20.0  # 20Hz update rate
     

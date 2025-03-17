@@ -26,7 +26,7 @@ from apriltag_pose import get_camera_pose_in_base
 class TestAprilTagPose(unittest.TestCase):
     def setUp(self):
         # Load a test image from file (adjust the path as needed)
-        image_path = os.path.join(os.path.dirname(__file__), 'images', 'test_image.png')
+        image_path = os.path.join(os.path.dirname(__file__), 'images', 'image.png')
         self.test_image = cv2.imread(image_path)
         self.assertIsNotNone(self.test_image, "Test image could not be loaded.")
         

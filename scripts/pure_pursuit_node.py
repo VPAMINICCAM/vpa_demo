@@ -47,17 +47,18 @@ class PurePursuitTurnNode:
         rospy.loginfo('%s: Initial pose received', self.robot_name)
 
         self.lookahead_time = 0.5
-        self.max_speed      = 1.0
+        self.max_speed      = 0.5
         self.controller     = PurePursuitController(self.trajectory_points, self.lookahead_time, self.max_speed)
         self.sub_odom = rospy.Subscriber('odom', Odometry, self.odom_callback)
 
         self.sub_start = rospy.Subscriber('start_turn', Bool, self.start_callback)
-
+        self.pub_is_finish = rospy.Publisher('turn_end',Bool,queue_size=1)
         self.pub_cmd = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
     def initial_pose_callback(self, msg):
         # decode odom message to (x,y,theta)
         # this function should only work once
+        rospy.loginfo('%s: pp controller get first pose',self.robot_name)
         self.delta_x = msg.pose.pose.position.x
         self.delta_y = msg.pose.pose.position.y
         orientation_q = msg.pose.pose.orientation
@@ -73,6 +74,7 @@ class PurePursuitTurnNode:
 
     def start_callback(self, msg):
         self.running = msg.data
+        rospy.loginfo('%s: turning allow toggle',self.robot_name)
 
     def turn_callback(self, msg):
         direction = msg.data
@@ -89,7 +91,7 @@ class PurePursuitTurnNode:
         self.y = 0
         self.theta = 0
         self.already_generated = False
-        
+        self.pub_is_finish.publish(Bool(True))
         # Wait for a new turn_direction message from the commander
         rospy.loginfo('%s: Waiting for new turn_direction...', self.robot_name)
         turn_direction_msg = rospy.wait_for_message('turn_direction', Int32)
@@ -115,8 +117,8 @@ class PurePursuitTurnNode:
                 # Stop criterion: if the robot is close enough to the last point in the trajectory
                 last_point = self.trajectory_points[-1]
                 distance_to_goal = ((self.x - last_point.x) ** 2 + (self.y - last_point.y) ** 2) ** 0.5
-                print('x,y,distance',self.x,self.y,distance_to_goal)
-                if distance_to_goal < 0.05:  # Threshold distance to stop
+       
+                if distance_to_goal < 0.15:  # Threshold distance to stop
                     rospy.loginfo('%s: Reached the goal', self.robot_name)
                     self.running = False
                     

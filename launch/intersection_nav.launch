@@ -1,0 +1,19 @@
+<launch>
+    <!-- Launch the intersection_nav node -->
+    <!-- Argument for turn_index -->
+    <arg name="turn_index" default="0" />
+
+    <node name="intersection_nav" pkg="vpa_demo" type="intersection_nav.py" output="screen">
+        <param name="turn_index" value="$(arg turn_index)" />
+    </node>
+
+    <!-- Include the pure_pursuit_with_encoder.launch file -->
+    <include file="$(find vpa_demo)/launch/pure_pursuit_with_encoder.launch" />
+
+    <!-- Argument to optionally include vpa_traction_start.launch -->
+    <arg name="include_vpa_traction" default="false" />
+    <include file="$(find vpa_robot_interface)/launch/vpa_traction_start.launch" if="$(arg include_vpa_traction)" />
+
+    <!-- Include the vpa_camera.launch file -->
+    <include file="$(find vpa_robot_interface)/launch/vpa_camera.launch" />
+</launch>

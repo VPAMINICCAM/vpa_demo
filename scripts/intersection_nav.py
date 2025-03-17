@@ -7,7 +7,7 @@ import math
 from std_msgs.msg import Bool,Int32
 from sensor_msgs.msg import Image
 # from middleware.apriltag_pose import get_camera_pose_in_base
-from middleware.apriltag_pose_dt import AprilTagPoseEstimator  # ✅ Updated Import
+from middleware.apriltag_pose_dt import get_robot_x_y_theta
 from nav_msgs.msg import Odometry
 
 def yaw_to_quaternion(yaw_angle_rad):
@@ -57,7 +57,6 @@ class IntersectionNav:
         self.ref_tag_size = 0.064
 
         # ✅ Use the new pose estimator class
-        self.pose_estimator = AprilTagPoseEstimator(tag_size=self.ref_tag_size)
 
         # self.T_reftag_to_inter = np.array([
         #     [ 0, -1, 0, 0   ],
@@ -100,11 +99,11 @@ class IntersectionNav:
         
                     attempt_count += 1
                     try:
-                        x, y, theta = self.pose_estimator.get_x_y_theta(self.image, t_tag_to_world=np.array([0, 0.06, 0]))
+                        x, y, theta = get_robot_x_y_theta(self.image)
                         self.found_ref_tag = True
                         self.turn_pub.publish(Int32(self.turn_index))
                         rospy.loginfo("%s: Robot position: x=%.2f, y=%.2f", self.robot_name, x,y)
-                        rospy.loginfo("%s: Robot yaw: %.2f degrees", self.robot_name, math.degrees(robot_yaw))
+                        rospy.loginfo("%s: Robot yaw: %.2f degrees", self.robot_name, math.degrees(theta))
 
 
                         # Publish the initial pose for pure pursuit

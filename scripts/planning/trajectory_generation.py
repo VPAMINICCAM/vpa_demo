@@ -19,11 +19,11 @@ def generate_trajectory_turn(direction: int) -> list:
             trajectory_points.append(point)
     
     elif direction == 1: # left turn
-        duration = 0.21 / speed  # 20 cm straight
+        duration = 0.3 / speed  # 20 cm straight
         num_points = int(duration * num_points_per_meter)
         for i in range(num_points + 1):
             t = i * (duration / num_points)
-            x = speed * t - 0.06
+            x = speed * t - 0.15
             y = 0
             theta = 0  # Pointing along the positive x-axis
             
@@ -63,11 +63,11 @@ def generate_trajectory_turn(direction: int) -> list:
         arc_length = math.pi / 2 * turn_radius
         turn_duration = arc_length / speed
         num_turn_points = int(turn_duration * num_points_per_meter)
-        duration = 0.06 / speed  # 15 cm straight
+        duration = 0.15 / speed  # 15 cm straight
         num_points = int(duration * num_points_per_meter)
         for i in range(num_points + 1):
             t = i * (duration / num_points)
-            x = speed * t - 0.06
+            x = speed * t - 0.15
             y = 0
             theta = 0  # Pointing along the positive x-axis
             

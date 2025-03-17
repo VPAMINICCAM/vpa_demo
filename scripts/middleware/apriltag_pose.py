@@ -6,11 +6,13 @@ from pupil_apriltags import Detector
 
 # if you are python 3.8
 import pupil_apriltags
-package_dir = os.path.dirname(pupil_apriltags.__file__)
-parent_dir = os.path.dirname(package_dir)
-dll_dir = os.path.join(parent_dir, "pupil_apriltags.libs")
+import sys
+if sys.platform == 'win32':
+    package_dir = os.path.dirname(pupil_apriltags.__file__)
+    parent_dir = os.path.dirname(package_dir)
+    dll_dir = os.path.join(parent_dir, "pupil_apriltags.libs")
 
-os.add_dll_directory(dll_dir)
+    os.add_dll_directory(dll_dir)
 
 try:
     from cv_bridge import CvBridge, CvBridgeError
@@ -31,7 +33,7 @@ except ImportError:
 def load_camera_intrinsics(yaml_file_path=None):
     if yaml_file_path is None:
         # Default camera parameters (fx, fy, cx, cy) from the demo
-        return [305.5718893575089, 308.8338858195428, 303.0797142544728, 231.8845403702499]
+        return [305.5718893575089/2, 308.8338858195428/2, 303.0797142544728/2, 231.8845403702499/2]
     with open(yaml_file_path, 'r') as file:
         cam_data = yaml.safe_load(file)
     # Extract fx, fy, cx, cy from the camera_matrix/data field

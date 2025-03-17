@@ -2,6 +2,7 @@ import os
 import yaml
 import cv2
 import numpy as np
+import math
 from dt_apriltags import Detector
 
 try:
@@ -19,6 +20,13 @@ try:
 except ImportError:
     from unittest.mock import MagicMock
     Image = MagicMock()
+
+def extract_position_and_yaw(T):
+    """ Extract position and yaw angle from transformation matrix T """
+    position = T[:3, 3]  # ✅ Always take the last column
+
+    yaw = math.atan2(T[1, 0], T[0, 0])  # Extract yaw from rotation matrix
+    return position, yaw
 
 def load_camera_intrinsics(yaml_file_path=None):
     if yaml_file_path is None:
@@ -59,6 +67,7 @@ def get_camera_pose_in_base(image, base_to_camera_transform=None, yaml_file_path
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     else:
         gray = image
+    
 
     camera_params = load_camera_intrinsics(yaml_file_path)
 
@@ -81,7 +90,7 @@ def get_camera_pose_in_base(image, base_to_camera_transform=None, yaml_file_path
 
     return tag_poses
 
-def get_robot_x_y_theta(self, image, t_tag_to_world=np.array([0, 0.06, 0])):
+def get_robot_x_y_theta(image, t_tag_to_inter=np.array([0, 0.06, 0])):
     """
     Computes the robot's (x, y, theta) in the world frame given an image.
 
@@ -95,8 +104,8 @@ def get_robot_x_y_theta(self, image, t_tag_to_world=np.array([0, 0.06, 0])):
         - theta (radians)
     """
     # Get detected tag pose in the base frame
-    tag_poses = get_camera_pose_in_base(image, yaml_file_path=self.yaml_file_path, tag_size=self.tag_size, cv_debug=True)
-
+    tag_poses = get_camera_pose_in_base(image, yaml_file_path=None, cv_debug=False)
+   
     if not tag_poses:
         raise ValueError("No valid tag pose detected.")
 
@@ -104,19 +113,20 @@ def get_robot_x_y_theta(self, image, t_tag_to_world=np.array([0, 0.06, 0])):
     T_base_to_tag, _ = tag_poses[0]
 
     # Transformation from tag to world (intersection base)
-    R_tag_to_world = np.array([
+    R_tag_to_inter = np.array([
         [0, -1, 0],  # World X → Tag -Y
         [-1, 0, 0],  # World Y → Tag -X
-        [0, 0, 1]    # World Z → Tag Z
+        [0,  0, 1]    # World Z → Tag Z
     ])
 
-    T_tag_to_world = np.eye(4)
-    T_tag_to_world[:3, :3] = R_tag_to_world
-    T_tag_to_world[:3, 3] = t_tag_to_world  # Use the provided input
+    T_tag_to_inter = np.eye(4)
+    T_tag_to_inter[:3, :3] = R_tag_to_inter
+    T_tag_to_inter[:3, 3]  = t_tag_to_inter
+    # Compute transformations
+    T_base_to_inter = T_base_to_tag @ T_tag_to_inter  
+    T_inter_to_base = np.linalg.inv(T_base_to_inter)
 
-    # Compute the robot's position and yaw
-    T_base_to_world = T_tag_to_world @ np.linalg.inv(T_base_to_tag)
-    x, y = T_base_to_world[:2, 3]
-    theta = np.arctan2(T_base_to_world[1, 0], T_base_to_world[0, 0])
-
-    return x, y, theta
+    robot_position, robot_yaw = extract_position_and_yaw(T_inter_to_base)
+    x = robot_position[0]
+    y = robot_position[1]
+    return x, y, robot_yaw

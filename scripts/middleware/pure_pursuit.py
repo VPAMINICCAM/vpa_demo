@@ -52,7 +52,7 @@ class PurePursuitController:
         d_target = np.hypot(target_point.x - state.x, target_point.y - state.y)
         # Compute the desired speed so that d_target is covered in lookahead_time,
         # but do not exceed the maximum allowed speed.
-        desired_speed = np.clip(d_target / self.lookahead_time, 0, self.max_speed)
+        desired_speed = np.clip(0.8*d_target / self.lookahead_time, 0, self.max_speed)
 
         # Transform the target point into the vehicle's coordinate frame.
         dx = target_point.x - state.x
