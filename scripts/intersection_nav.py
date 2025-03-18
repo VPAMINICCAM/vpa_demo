@@ -79,6 +79,9 @@ class IntersectionNav:
                 self.is_intersection    = False
                 self.is_turn_finish     = False
 
+                rospy.sleep(2)
+                self.run()
+
 
     def intersection_callback(self, msg):
         # Callback function for intersection trigger
